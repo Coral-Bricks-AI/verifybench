@@ -1,0 +1,57 @@
+{
+  "name": "verifybench",
+  "version": "0.2.0",
+  "description": "Correctness checks for LLM inference providers: tool calls, reasoning, structured output, and the Chat Completions, Responses and Messages routes",
+  "main": "dist/source/index.js",
+  "bin": {
+    "verifybench": "dist/source/index.js"
+  },
+  "preferGlobal": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "rm -rf dist && tsc",
+    "prepublishOnly": "rm -rf dist/ && tsc"
+  },
+  "author": "Coral Bricks AI",
+  "contributors": [
+    "Matt Baker (https://github.com/reissbaker)",
+    "Billy Cao",
+    "Synbad contributors (https://github.com/synthetic-lab/synbad)",
+    "monotykamary (https://github.com/monotykamary)"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monotykamary/verifybench.git"
+  },
+  "license": "MIT",
+  "files": [
+    "dist",
+    "source",
+    "evals",
+    "package.json",
+    "tsconfig.json",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/source/exports.d.ts",
+      "import": "./dist/source/exports.js"
+    }
+  },
+  "dependencies": {
+    "@commander-js/extra-typings": "^14.0.0",
+    "ajv": "^8.20.0",
+    "commander": "^14.0.2",
+    "openai": "^6.9.1",
+    "structural": "^0.0.29",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6",
+    "vitest": "^4.0.17"
+  },
+  "homepage": "https://github.com/monotykamary/verifybench#readme"
+}
