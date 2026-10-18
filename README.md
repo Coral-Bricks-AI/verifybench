@@ -68,7 +68,7 @@ reproducible JSON for a new eval.
 
 ### The eval set
 
-`evals/manifest.json` is the eval set. It has a version (currently **1.0.0**)
+`evals/manifest.json` is the eval set. It has a version (currently **1.1.0**)
 and one entry per eval:
 
 ```json
@@ -195,8 +195,8 @@ the rest their status; below the evals come the capability roll-up, the
 counts per verdict and status, and the run's verdict:
 
 ```bash
-verifybench matrix results/1.0.0/*/*/*.json            # rows that didn't pass somewhere
-verifybench matrix --all --format md results/1.0.0/*/*/*.json
+verifybench matrix results/1.1.0/*/*/*.json            # rows that didn't pass somewhere
+verifybench matrix --all --format md results/1.1.0/*/*/*.json
 ```
 
 `--format` is `text` (default), `md` or `json`. Older report files (before
@@ -208,7 +208,7 @@ verdicts) are graded on the fly with the same rules.
 {
   "format": 3,
   "tool": { "name": "verifybench", "version": "0.2.0" },
-  "manifest": { "name": "verifybench", "version": "1.0.0" },
+  "manifest": { "name": "verifybench", "version": "1.1.0" },
   "provider": "example", "model": "some-model", "baseUrl": "https://api.example.com/v1",
   "stream": false, "reasoningEffort": "high", "count": 3,
   "defaultMaxTokens": 16384, "passableRate": 0.5,
@@ -340,7 +340,7 @@ export async function run(ctx: EvalContext) {
 | Directory | Route | What it checks |
 |---|---|---|
 | `evals/tools` | Chat Completions | Tool call parsing, parallel calls, `tool_choice`, argument corruption, tool history |
-| `evals/reasoning` | all three | Reasoning kept apart from the answer, and accepted back in history |
+| `evals/reasoning` | all three | Reasoning kept apart from the answer, accepted back in history, and controlled by each harness's effort setting |
 | `evals/structured` | Chat Completions | `response_format` and strict tools: regex anchors in `pattern`, enum escaping, `$ref`, nullable unions, schema keywords a decoder may drop, clean termination of the document |
 | `evals/chat` | Chat Completions | Stop sequences, output limits, usage in streams, logprobs, error bodies, the `developer` role |
 | `evals/responses` | Responses | Output items, stream event order, `previous_response_id`, tool round trips with and without stored state, retrieve and delete, background mode, cancel |
@@ -366,6 +366,24 @@ when the provider reads reasoning on the current turn but an earlier turn's
 reasoning adds no prompt tokens, the earlier-turn evals report `unsupported`
 for that model instead of failing. A gateway that strips earlier-turn
 reasoning itself looks the same from outside.
+
+### Reasoning effort
+
+Every harness asks for reasoning its own way, and a provider that honours only one of them leaves the
+others' users with no reasoning or no control over it (until the user writes a hand-made config):
+
+| Harness | How it asks | Evals |
+|---|---|---|
+| Claude Code | Messages: `thinking: {type: "adaptive"}` + `output_config.effort` | `reasoning/messages-adaptive`, `reasoning/messages-effort-scales` |
+| Codex | Responses: `reasoning.effort` (incl. `minimal`, `xhigh`), `store: false` + `include: ["reasoning.encrypted_content"]`, reasoning items sent back as input | `reasoning/responses-effort-scales`, `reasoning/responses-encrypted-roundtrip`, `reasoning/effort-names` |
+| OpenCode, Pi, most SDKs | Chat Completions: `reasoning_effort` (incl. `none`) | `reasoning/chat-effort-scales`, `reasoning/effort-names` |
+| Anything that turns thinking off | Messages: `thinking: {type: "disabled"}` | `reasoning/messages-thinking-off` |
+| Any harness that configures itself | `GET /models` saying whether a model reasons and which efforts it takes | `reasoning/models-reasoning-metadata` |
+
+The `*-effort-scales` evals check that every effort the model offers means something: they read the
+model's efforts from `GET /models` (else `low` and `high`), ask a question that takes real work three times
+at each, and need each step up to reason at least 20% more than the one below, by median. One sample is
+not enough: reasoning length varies about two-fold from run to run.
 
 ## Evals from Synbad
 

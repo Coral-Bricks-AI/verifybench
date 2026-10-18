@@ -306,7 +306,8 @@ export async function chat(
   if(!stream) {
     const response = await client.chat.completions.create({
       ...json,
-      reasoning_effort: reasoningEffort,
+      // An eval that sets its own effort keeps it; --reasoning-effort fills in only when it doesn't.
+      reasoning_effort: (json as any).reasoning_effort ?? reasoningEffort,
       stream,
       model,
     } as OpenAI.ChatCompletionCreateParamsNonStreaming);
@@ -321,7 +322,7 @@ export async function chat(
 
   const chunkStream = await (client.chat.completions.create({
     ...json,
-    reasoning_effort: reasoningEffort,
+    reasoning_effort: (json as any).reasoning_effort ?? reasoningEffort,
     model,
     stream: true,
   } as OpenAI.ChatCompletionCreateParamsStreaming) as unknown as Stream<ChatCompletionChunkWithReasoning>);
